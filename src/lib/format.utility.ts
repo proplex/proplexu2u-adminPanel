@@ -6,6 +6,8 @@ export const formatCurrency = (value: number): string => {
         currency: 'VND',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
+        currencyDisplay: 'code', // <-- Add this line
+
       });
 };
 export const formatCurrencyWithZero = (value: number): string => {
@@ -60,6 +62,7 @@ export const formatCompactCurrency = (value: number): string => {
           currency: "VND", // or "VND"
           notation: "compact",
           maximumFractionDigits: 2,
+          currencyDisplay: 'code'
         }).format(value);
   };
 

@@ -83,7 +83,7 @@ const SpvOverViewRight = ({
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold">
+            <h1 className="text-2xl font-semibold"> 
               {formatCurrency(
                 distribution?.asset?.rentalInformation?.grossMonthlyRent ?? 0
               )}
