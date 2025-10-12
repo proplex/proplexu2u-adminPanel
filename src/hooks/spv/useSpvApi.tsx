@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import api from "@/lib/httpClient";
 import toast from "react-hot-toast";
-import { OwnmaliSDK } from "@/lib/ownmali";
-import { ADDRESSES } from "@/lib/ownmali";
+// Changed from OwnmaliSDK to proplex functions
+import { deploySPV, DeploySPVParams } from "@/lib/proplex";
 import useIPFSUpload from "@/hooks/useIPFSUpload";
 import { useWalletConnection } from "./useWalletConnection";
 
@@ -46,7 +46,8 @@ export const useSpvApi = () => {
     isConnected,
     connectorName,
     isMetaMaskConnected,
-    getProvider
+    getProvider,
+    switchToU2UNetwork // Add this new function
   } = useWalletConnection();
 
   const initializeSDK = useCallback(async () => {
@@ -69,19 +70,29 @@ export const useSpvApi = () => {
         throw new Error("Wallet address mismatch. Please reconnect your MetaMask wallet.");
       }
 
-      const sdk = new OwnmaliSDK(provider, signer);
+      // Verify we're connected to the correct network (U2U testnet or mainnet)
+      const network = await provider.getNetwork();
+      console.log('Connected network:', network);
       
+      // U2U Testnet = 2484, U2U Mainnet = 39
+      if (network.chainId !== 2484 && network.chainId !== 39) {
+        console.error('Incorrect network detected:', network);
+        throw new Error(`Please switch to U2U Network (Testnet ID: 2484 or Mainnet ID: 39). Currently connected to chain ID: ${network.chainId}`);
+      }
+
+      // For proplex, we'll return the provider and signer directly
       // Log successful initialization
-      console.log("SDK initialized successfully:", {
+      console.log("Provider and signer initialized successfully:", {
         signerAddress,
         connectedAddress: address,
         connectorName,
-        isMetaMask: isMetaMaskConnected
+        isMetaMask: isMetaMaskConnected,
+        network
       });
       
-      return { sdk, provider, signer, signerAddress };
+      return { provider, signer, signerAddress };
     } catch (error) {
-      console.error('Failed to initialize SDK:', error);
+      console.error('Failed to initialize provider:', error);
       throw error;
     }
   }, [isConnected, address, getProvider, connectorName, isMetaMaskConnected]);
@@ -115,12 +126,24 @@ export const useSpvApi = () => {
         throw new Error("Please connect your MetaMask wallet first");
       }
 
+      // 2. Check if user is on the correct U2U network
+      // Note: We can't directly access chainId here, so we'll check during provider initialization
       console.log("Wallet connected:", { address, isConnected });
 
-      // 2. Initialize SDK with wagmi
-      console.log("Initializing SDK...");
-      const { sdk } = await initializeSDK();
-      console.log("SDK initialized successfully");
+      // 2. Initialize provider and signer
+      console.log("Initializing provider and signer...");
+      const { provider, signer } = await initializeSDK();
+      console.log("Provider and signer initialized successfully");
+      
+      // Verify we're connected to the correct network (U2U testnet or mainnet)
+      const network = await provider.getNetwork();
+      console.log('Connected network:', network);
+      
+      // U2U Testnet = 2484, U2U Mainnet = 39
+      if (network.chainId !== 2484 && network.chainId !== 39) {
+        console.error('Incorrect network detected:', network);
+        throw new Error(`Please switch to U2U Network (Testnet ID: 2484 or Mainnet ID: 39). Currently connected to chain ID: ${network.chainId}`);
+      }
 
       // 3. First create the company in our backend
       const res = await api.post("/company", {
@@ -151,36 +174,36 @@ export const useSpvApi = () => {
 
       console.log("Registering SPV on blockchain:", { spvName, metadataCID });
 
-      // 5. Register SPV on blockchain
+      // 5. Register SPV on blockchain using the new proplex deploySPV function
       const spvId = backendCompanyId; // Generate a unique SPV ID
-      const kyc = true; // Default to requiring KYC
-      const country = data.jurisdiction || "KE";
-
-      console.log("Calling SDK deploySPV with params:", {
-        spvId,
-        spvName,
+      console.log("blockchain params is here ::", spvId, spvName,address, metadataCID);
+      
+      // Prepare parameters for deploySPV
+      const deployParams: DeploySPVParams = {
+        spvId: spvId,
+        name: spvName,
         admin: address,
-        metadataCID,
-      });
+        metaCID: metadataCID
+      };
 
-      const tx = await sdk.deploySPV(
-        spvId,
-        spvName,
-        address, // admin address
-        metadataCID
-      );
+      console.log("Calling proplex deploySPV with params:", deployParams);
 
-      console.log("tx is here why you are fear", tx);
-      console.log("Transaction sent:", tx.hash);
+      // Call the new deploySPV function from proplex.ts
+      const receipt = await deploySPV(provider, deployParams);
+      
 
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
       console.log("Transaction receipt:", receipt);
 
       // Get the SPV suite addresses from the SPVSuiteDeployed event
+      // Note: The event name might be different in the new contract, let's look for the right event
       const spvSuiteDeployedEvent = receipt.events?.find(
         (e: any) => e.event === "SPVSuiteDeployed"
       ) as ethers.Event | undefined;
+
+      // If we can't find the SPVSuiteDeployed event, let's log all events to see what we have
+      if (!spvSuiteDeployedEvent) {
+        console.log("All events in receipt:", receipt.events);
+      }
 
       if (!spvSuiteDeployedEvent?.args) {
         throw new Error(
@@ -213,7 +236,7 @@ export const useSpvApi = () => {
         blockchainSpvId: spvId,
         idHash: idHash,
         walletAddress: address,
-        transactionHash: tx.hash,
+        transactionHash: receipt.transactionHash,
         metadata: metadataCID,
       });
 

@@ -1,6 +1,6 @@
 # Proplex
 
-A modern admin dashboard for the Proplex platform, built with React, TypeScript, Vite, Redux Toolkit, and Tailwind CSS. Proplex is a pioneering blockchain platform democratizing access to high-value real-world assets (RWAs) like commercial real estate, private equity, and infrastructure projects via fractional tokenized ownership on a multi-chain ecosystem (Ethereum, Polygon, Solana, U2U Network).
+A modern admin dashboard for the Proplex platform, built with React, TypeScript, Vite, Redux Toolkit, and Tailwind CSS. Proplex is a pioneering blockchain platform democratizing access to high-value real-world assets (RWAs) like commercial real estate, private equity, and infrastructure projects via fractional tokenized ownership on a multi-chain ecosystem (Ethereum, U2U Network, Solana, XDC).
 
 ## Features
 - Modular, scalable codebase for RWA tokenization, DAO governance, and compliance management

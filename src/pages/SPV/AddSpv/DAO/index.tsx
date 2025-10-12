@@ -1,5 +1,3 @@
-
-
 import FormGenerator from '@/components/UseForm/FormGenerator';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -70,7 +68,7 @@ const DAOCreation = () => {
         <div className='px-6 py-4 border-t border-gray-100'>
           <span className='text-black font-medium block mb-3'>Block Chain</span>
           <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3'>
-            {['polygon', 'xdc', 'xrpl'].map((chain) => (
+            {['u2u', 'xdc', 'xrpl'].map((chain) => (
               <Button
                 key={chain}
                 variant={blockChain === chain ? 'secondary' : 'outline'}

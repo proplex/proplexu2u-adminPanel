@@ -170,8 +170,8 @@ const SPVTable: React.FC<SPVTableProps> = ({ data, setSpv }) => {
         const address = info.getValue();
         if (!address) return <span className="text-gray-400">Not deployed</span>;
         
-        // Use the address directly for Polygon Amoy explorer
-        const explorerUrl = `https://amoy.polygonscan.com/address/${address}`;
+        // Use the address directly for U2U testnet explorer
+        const explorerUrl = `https://testnet.u2uscan.xyz/address/${address}`;
 
         return (
           <div className="flex gap-2">

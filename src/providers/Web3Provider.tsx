@@ -1,12 +1,47 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider, createConfig, http, useAccount, useConnect, useDisconnect } from 'wagmi';
 import { ethers } from 'ethers';
-import { mainnet, sepolia, bsc, polygon, arbitrum, optimism ,polygonAmoy} from 'wagmi/chains';
 import { 
   metaMask,
 } from 'wagmi/connectors';
 import { ReactNode, useEffect, useCallback } from 'react';
 import { Connector } from 'wagmi';
+
+// Define U2U testnet chain
+const u2uTestnet = {
+  id: 2484,
+  name: 'U2U Nebulas Testnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'U2U',
+    symbol: 'U2U',
+  },
+  rpcUrls: {
+    default: { http: ['https://rpc-nebulas-testnet.u2u.xyz'] },
+  },
+  blockExplorers: {
+    default: { name: 'U2U Explorer', url: 'https://testnet.u2uscan.xyz' },
+  },
+  testnet: true,
+} as const;
+
+// Define U2U mainnet chain
+const u2uMainnet = {
+  id: 39,
+  name: 'U2U Mainnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'U2U',
+    symbol: 'U2U',
+  },
+  rpcUrls: {
+    default: { http: ['https://rpc-mainnet.u2u.xyz'] },
+  },
+  blockExplorers: {
+    default: { name: 'U2U Explorer', url: 'https://u2uscan.xyz' },
+  },
+  testnet: false,
+} as const;
 
 interface WalletConnectHookReturnType {
   address: string | undefined;
@@ -15,6 +50,7 @@ interface WalletConnectHookReturnType {
   connector: any;
   connect: (connectorId: string) => Promise<{ success: boolean; error?: string }>;
   disconnect: () => Promise<void>;
+  switchToU2UNetwork: () => Promise<{ success: boolean; message: string }>;
   error: Error | null;
   isConnecting: boolean;
 }
@@ -29,21 +65,15 @@ export const WALLET_IDS = {
   METAMASK: 'metaMask',
 } as const;
 
-// List of supported chains
-export const supportedChains = [mainnet, sepolia, bsc, polygon, arbitrum, optimism, polygonAmoy] as const;
+// List of supported chains - only U2U chains
+export const supportedChains = [u2uTestnet, u2uMainnet] as const;
 
-// Configure RPC endpoints
+// Configure RPC endpoints - only U2U RPC endpoints
 export const config = createConfig({
   chains: supportedChains,
   transports: {
-    [mainnet.id]: http('https://eth.llamarpc.com'),
-    [sepolia.id]: http('https://rpc.sepolia.org'),
-    [bsc.id]: http('https://bsc-dataseed.binance.org/'),
-    [polygon.id]: http('https://polygon-rpc.com/'),
-    [arbitrum.id]: http('https://arb1.arbitrum.io/rpc'),
-    [optimism.id]: http('https://mainnet.optimism.io'),
-    [polygonAmoy.id]: http('https://rpc-amoy.polygon.technology/'),
-
+    [u2uTestnet.id]: http('https://rpc-nebulas-testnet.u2u.xyz'), // U2U Testnet RPC endpoint
+    [u2uMainnet.id]: http('https://rpc-mainnet.u2u.xyz'), // U2U Mainnet RPC endpoint
   },
   connectors: [
     // MetaMask
@@ -91,6 +121,52 @@ export function useWalletConnect(): WalletConnectHookReturnType {
       throw error;
     }
   }, [disconnect]);
+  
+  // Function to switch to U2U network
+  const switchToU2UNetwork = useCallback(async () => {
+    if (typeof window === 'undefined' || !window.ethereum) {
+      throw new Error('MetaMask is not installed!');
+    }
+
+    try {
+      // First, try to switch to U2U Testnet (2484)
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x9b4' }], // 2484 in hex
+      });
+      return { success: true, message: 'Switched to U2U Testnet' };
+    } catch (switchError: any) {
+      // This error code indicates that the chain has not been added to MetaMask
+      if (switchError.code === 4902) {
+        try {
+          // Add U2U Testnet network
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+              {
+                chainId: '0x9b4', // 2484 in hex
+                chainName: 'U2U Nebulas Testnet',
+                nativeCurrency: {
+                  name: 'U2U',
+                  symbol: 'U2U',
+                  decimals: 18,
+                },
+                rpcUrls: ['https://rpc-nebulas-testnet.u2u.xyz'],
+                blockExplorerUrls: ['https://testnet.u2uscan.xyz'],
+              },
+            ],
+          });
+          return { success: true, message: 'Added and switched to U2U Testnet' };
+        } catch (addError) {
+          console.error('Failed to add U2U Testnet network:', addError);
+          throw new Error('Failed to add U2U Testnet network. Please add it manually in MetaMask.');
+        }
+      } else {
+        console.error('Failed to switch to U2U Testnet network:', switchError);
+        throw new Error('Failed to switch to U2U Testnet network. Please switch manually in MetaMask.');
+      }
+    }
+  }, []);
   
   // Log wallet status for debugging
   useEffect(() => {
@@ -149,6 +225,7 @@ export function useWalletConnect(): WalletConnectHookReturnType {
     connector: activeConnector || undefined,
     connect: connectWallet,
     disconnect: handleDisconnect,
+    switchToU2UNetwork, // Add the new function to the return object
     error: connectError || null,
     isConnecting: isPending,
   };
@@ -164,6 +241,15 @@ function ConnectionLogger() {
       address,
       chainId,
       connector: connector?.name,
+      // Add more detailed network information
+      isU2UNetwork: chainId === 2484 || chainId === 39,
+      networkName: chainId === 2484 ? 'U2U Nebulas Testnet' : 
+                  chainId === 39 ? 'U2U Mainnet' : 
+                  chainId === 1 ? 'Ethereum Mainnet' : 
+                  chainId === 137 ? 'Polygon Mainnet' : 
+                  chainId === 80001 ? 'Polygon Mumbai Testnet' : 
+                  chainId === 80002 ? 'Polygon Amoy Testnet' : 
+                  `Unknown Network (${chainId})`
     });
   }, [address, isConnected, chainId, connector]);
   

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { CircleUserRound, Wallet } from "lucide-react";
+import { CircleUserRound, Wallet, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,9 +24,20 @@ function Header() {
     connector,
     connect,
     disconnect,
+    switchToU2UNetwork,
     error,
     isConnecting,
   } = useWalletConnect();
+
+  // Check if user is on the correct U2U network
+  const isU2UNetwork = chainId === 2484 || chainId === 39;
+  const networkName = chainId === 2484 ? 'U2U Nebulas Testnet' : 
+                     chainId === 39 ? 'U2U Mainnet' : 
+                     chainId === 1 ? 'Ethereum Mainnet' : 
+                     chainId === 137 ? 'Polygon Mainnet' : 
+                     chainId === 80001 ? 'Polygon Mumbai Testnet' : 
+                     chainId === 80002 ? 'Polygon Amoy Testnet' : 
+                     `Unknown Network (${chainId})`;
 
   // Format address for display
   const formatAddress = useCallback((addr: string) => {
@@ -77,6 +88,20 @@ const handleDisconnectWallet = useCallback(async () => {
   }
 }, [disconnect]);
   
+  // Function to switch to U2U network
+  const handleSwitchToU2UNetwork = useCallback(async () => {
+    try {
+      setIsConnectingWallet(true);
+      const result = await switchToU2UNetwork();
+      console.log(result.message);
+    } catch (error: any) {
+      console.error('Error switching to U2U network:', error);
+      alert(error.message || 'Failed to switch network');
+    } finally {
+      setIsConnectingWallet(false);
+    }
+  }, [switchToU2UNetwork]);
+
   // Open wallet modal
   const openWalletModal = useCallback(() => {
     setIsWalletModalOpen(true);
@@ -108,13 +133,21 @@ const handleDisconnectWallet = useCallback(async () => {
       <div className="flex items-center gap-4">
         {isConnected && address ? (
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            <div className={`w-2 h-2 rounded-full ${isU2UNetwork ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
             <div className="text-gray-700 font-medium">
               <span className="text-sm">Connected:</span> {formatAddress(address)}
               {connector?.name && (
                 <span className="text-xs text-gray-500 ml-2">
                   ({connector.name})
                 </span>
+              )}
+              {!isU2UNetwork && (
+                <div className="flex items-center gap-1 mt-1">
+                  <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                  <span className="text-xs text-yellow-600">
+                    Wrong network: {networkName}
+                  </span>
+                </div>
               )}
             </div>
           </div>
@@ -127,32 +160,50 @@ const handleDisconnectWallet = useCallback(async () => {
         
         <div className="flex items-center gap-2">
           {isConnected ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" disabled={isConnecting}>
-                  <CircleUserRound className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem disabled className="text-xs opacity-70">
-                  {address}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleDisconnectWallet}
-                  className="text-red-500"
-                  disabled={isConnecting}
+            <>
+              {!isU2UNetwork && (
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={handleSwitchToU2UNetwork}
+                  disabled={isConnecting || isConnectingWallet}
+                  className="flex items-center gap-2"
                 >
-                  Disconnect Wallet
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  {isConnectingWallet ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4" />
+                  )}
+                  Switch to U2U
+                </Button>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" disabled={isConnecting}>
+                    <CircleUserRound className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled className="text-xs opacity-70">
+                    {address}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleDisconnectWallet}
+                    className="text-red-500"
+                    disabled={isConnecting}
+                  >
+                    Disconnect Wallet
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
             <Button 
               variant="outline" 

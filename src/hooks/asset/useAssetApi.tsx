@@ -6,7 +6,15 @@ import { ethers } from "ethers";
 import { BigNumber } from "ethers";
 import useSpvNames from "@/hooks/spv/useSpvNames";
 import useIPFSUpload from "@/hooks/useIPFSUpload";
-import { OwnmaliSDK } from "@/lib/ownmali";
+// Changed from OwnmaliSDK to proplex functions
+import { 
+  prepareDeploy, 
+  executeDeploy, 
+  approveTokens, 
+  PrepareDeployParams, 
+  ExecuteDeployParams, 
+  ApproveParams 
+} from "@/lib/proplex";
 
 // Import the wallet connection hook
 import { useWalletConnection } from "@/hooks/spv/useWalletConnection";
@@ -76,19 +84,18 @@ export const useAssetApi = () => {
         throw new Error("Wallet address mismatch. Please reconnect your MetaMask wallet.");
       }
 
-      const sdk = new OwnmaliSDK(provider, signer);
-      
+      // For proplex, we'll return the provider and signer directly
       // Log successful initialization
-      console.log("SDK initialized successfully:", {
+      console.log("Provider and signer initialized successfully:", {
         signerAddress,
         connectedAddress: address,
         connectorName,
         isMetaMask: isMetaMaskConnected
       });
       
-      return { provider, signer, sdk, address: signerAddress };
+      return { provider, signer, address: signerAddress };
     } catch (error) {
-      console.error('Failed to initialize SDK:', error);
+      console.error('Failed to initialize provider:', error);
       throw error;
     }
   }, [isConnected, address, getProvider, connectorName, isMetaMaskConnected]);
@@ -216,8 +223,8 @@ export const useAssetApi = () => {
           try {
             toast.loading("Deploying asset on blockchain...");
 
-            // Initialize SDK for blockchain operations
-            const { sdk } = await initializeSDK();
+            // Initialize provider and signer for blockchain operations
+            const { provider, signer } = await initializeSDK();
 
             if (!companyId) {
               throw new Error(
@@ -283,7 +290,7 @@ export const useAssetApi = () => {
               decimals
             );
 
-            // Call prepareDeploy from SDK (new two-step deployment)
+            // Call prepareDeploy from proplex (new two-step deployment)
             toast.loading("Preparing asset deployment on blockchain...");
             console.log(
               "final preparedeploy parasm is ehre:",
@@ -295,25 +302,27 @@ export const useAssetApi = () => {
               assetId,
               metadataCID
             );
-            const prepareTx = await sdk.prepareDeploy(
-              companyId, // spvId (using company ID)
-              assetName, // name
-              assetSymbol, // symbol
-              decimals, // decimals
-              maxSupply, // maxSupply from tokenInformation.tokenSupply
-              assetId, // assetId (using the database ID)
-              metadataCID // metaCID from IPFS upload
-            );
+            
+            // Prepare parameters for prepareDeploy
+            const prepareParams: PrepareDeployParams = {
+              spvId: companyId, // spvId (using company ID)
+              name: assetName, // name
+              symbol: assetSymbol, // symbol
+              decimals: decimals, // decimals
+              maxSupply: maxSupply.toString(), // maxSupply from tokenInformation.tokenSupply
+              assetId: assetId, // assetId (using the database ID)
+              metaCID: metadataCID // metaCID from IPFS upload
+            };
 
-            // Wait for deployment transaction to be mined
-            const deployReceipt = await prepareTx.wait();
+            const deployReceipt = await prepareDeploy(provider, prepareParams);
+
             console.log("Deployment transaction mined:", deployReceipt);
 
             const identityRegistry =
-              "0x1bfE79c579c72f43D07F5F43878afdBD09a2726a";
-            const compliance = "0xe42eE8C6ca221b582fd8Fb93476DB1c47E08e244";
-            const issuerRegistry = "0xEAFaF64aDbc6a626261B4dC5aAED112cC6844bE5";
-            const claimRegistry = "0x5Efdfa516F4F8Bac356f2eb6c0d8F9424A629f47";
+              "0x962185B4912bFb91bA9c4b26CE905E484Fa216c1";
+            const compliance = "0xad7C8C502DbbFCD74c2F68f002822048Af8985F9";
+            const issuerRegistry = "0x047E36d57b021e92ceb6d3b87aFEa480c5D9A388";
+            const claimRegistry = "0x37F9Df8f735c1F44dAbc8B86f57b840Ba189b54A";
             const spv = res?.data?.data?.company?.spvAddress || "0x"; // Dynamic SPV address from company data
             const assetOwnerAddress = assetOwner || "0x"; // Asset owner wallet address from company data
 
@@ -329,16 +338,23 @@ export const useAssetApi = () => {
               assetOwnerAddress
             );
 
-            const executeTx = await sdk.executeDeploy(
-              identityRegistry,
-              compliance,
-              issuerRegistry,
-              claimRegistry,
-              spv,
-              assetOwnerAddress
+            // Prepare parameters for executeDeploy
+            const tokenPrice = ethers.utils.parseUnits(
+              tokenInfo.tokenPrice?.toString() || "0",
+              decimals
             );
+            
+            const executeParams: ExecuteDeployParams = {
+              tokenPrice: tokenPrice.toString(),
+              identityRegistry: identityRegistry,
+              compliance: compliance,
+              issuerRegistry: issuerRegistry,
+              claimRegistry: claimRegistry,
+              spv: spv,
+              assetOwner: assetOwnerAddress
+            };
 
-            const executeReceipt = await executeTx.wait();
+            const executeReceipt = await executeDeploy(provider, executeParams);
             console.log("Execute receipt:", executeReceipt);
 
             // Listen for AssetSuiteDeployed event
@@ -367,14 +383,15 @@ export const useAssetApi = () => {
               assetId: assetIdFromEvent,
             });
 
-            const approvetx = await sdk.approve(
-              deployedAssetAddress,
-              assetManagerAddress,
-              ethers.constants.MaxUint256
-            );
-            const receipt = await approvetx.wait();
-            console.log("Approve tx:", approvetx);
-            console.log("Approve receipt:", receipt); //@note
+            // Prepare parameters for approveTokens
+            const approveParams: ApproveParams = {
+              assetTokenAddress: deployedAssetAddress,
+              spender: assetManagerAddress,
+              amount: ethers.constants.MaxUint256.toString()
+            };
+
+            const receipt = await approveTokens(provider, approveParams);
+            console.log("Approve receipt:", receipt);
 
             // Update the asset in the backend with blockchain deployment info
             const response = await api.put(

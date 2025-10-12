@@ -72,8 +72,8 @@ export const useWallet = () => {
       
       console.log('Initiating connection with MetaMask...');
       await connect({ 
-        connector: metaMaskConnector,
-        chainId: 1 // Optional: Force mainnet
+        connector: metaMaskConnector
+        // Removed hardcoded chainId: 1 to allow connection to U2U network
       });
       
     } catch (error) {
@@ -81,6 +81,52 @@ export const useWallet = () => {
       throw error;
     }
   }, [connect, connectors]);
+
+  // Function to switch to U2U network
+  const switchToU2UNetwork = useCallback(async () => {
+    if (typeof window === 'undefined' || !(window as any).ethereum) {
+      throw new Error('MetaMask is not installed!');
+    }
+
+    try {
+      // First, try to switch to U2U Testnet (2484)
+      await (window as any).ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x9b4' }], // 2484 in hex
+      });
+      return { success: true, message: 'Switched to U2U Testnet' };
+    } catch (switchError: any) {
+      // This error code indicates that the chain has not been added to MetaMask
+      if (switchError.code === 4902) {
+        try {
+          // Add U2U Testnet network
+          await (window as any).ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+              {
+                chainId: '0x9b4', // 2484 in hex
+                chainName: 'U2U Nebulas Testnet',
+                nativeCurrency: {
+                  name: 'U2U',
+                  symbol: 'U2U',
+                  decimals: 18,
+                },
+                rpcUrls: ['https://rpc-nebulas-testnet.u2u.xyz'],
+                blockExplorerUrls: ['https://testnet.u2uscan.xyz'],
+              },
+            ],
+          });
+          return { success: true, message: 'Added and switched to U2U Testnet' };
+        } catch (addError) {
+          console.error('Failed to add U2U Testnet network:', addError);
+          throw new Error('Failed to add U2U Testnet network. Please add it manually in MetaMask.');
+        }
+      } else {
+        console.error('Failed to switch to U2U Testnet network:', switchError);
+        throw new Error('Failed to switch to U2U Testnet network. Please switch manually in MetaMask.');
+      }
+    }
+  }, []);
 
   const disconnect = useCallback(() => {
     console.log('Disconnecting wallet...');
@@ -100,6 +146,7 @@ export const useWallet = () => {
     chainId,
     connect: connectWallet,
     disconnect,
+    switchToU2UNetwork, // Add the new function to the return object
     isConnecting,
     error: connectError || disconnectError,
     connector: connector?.name

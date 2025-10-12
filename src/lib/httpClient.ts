@@ -48,7 +48,7 @@ api.interceptors.response.use(
         }
 
         const { data } = await axios.post(
-          "https://test.ownmali.com/api/admin/refresh-token",
+          "http://localhost:3001/api/admin/refresh-token",
           { refreshToken }
         );
 
