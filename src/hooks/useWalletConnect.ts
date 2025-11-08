@@ -73,7 +73,7 @@ export const useWallet = () => {
       console.log('Initiating connection with MetaMask...');
       await connect({ 
         connector: metaMaskConnector
-        // Removed hardcoded chainId: 1 to allow connection to U2U network
+        // Removed hardcoded chainId: 1 to allow connection to Arbitrum Sepolia network
       });
       
     } catch (error) {
@@ -82,48 +82,48 @@ export const useWallet = () => {
     }
   }, [connect, connectors]);
 
-  // Function to switch to U2U network
-  const switchToU2UNetwork = useCallback(async () => {
+  // Function to switch to Arbitrum Sepolia network
+  const switchToArbitrumSepolia = useCallback(async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum) {
       throw new Error('MetaMask is not installed!');
     }
 
     try {
-      // First, try to switch to U2U Testnet (2484)
+      // First, try to switch to Arbitrum Sepolia (421614)
       await (window as any).ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x9b4' }], // 2484 in hex
+        params: [{ chainId: '0x66eee' }], // 421614 in hex
       });
-      return { success: true, message: 'Switched to U2U Testnet' };
+      return { success: true, message: 'Switched to Arbitrum Sepolia' };
     } catch (switchError: any) {
       // This error code indicates that the chain has not been added to MetaMask
       if (switchError.code === 4902) {
         try {
-          // Add U2U Testnet network
+          // Add Arbitrum Sepolia network
           await (window as any).ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [
               {
-                chainId: '0x9b4', // 2484 in hex
-                chainName: 'U2U Nebulas Testnet',
+                chainId: '0x66eee', // 421614 in hex
+                chainName: 'Arbitrum Sepolia',
                 nativeCurrency: {
-                  name: 'U2U',
-                  symbol: 'U2U',
+                  name: 'ETH',
+                  symbol: 'ETH',
                   decimals: 18,
                 },
-                rpcUrls: ['https://rpc-nebulas-testnet.u2u.xyz'],
-                blockExplorerUrls: ['https://testnet.u2uscan.xyz'],
+                rpcUrls: ['https://sepolia-rollup.arbitrum.io/rpc'],
+                blockExplorerUrls: ['https://sepolia.arbiscan.io'],
               },
             ],
           });
-          return { success: true, message: 'Added and switched to U2U Testnet' };
+          return { success: true, message: 'Added and switched to Arbitrum Sepolia' };
         } catch (addError) {
-          console.error('Failed to add U2U Testnet network:', addError);
-          throw new Error('Failed to add U2U Testnet network. Please add it manually in MetaMask.');
+          console.error('Failed to add Arbitrum Sepolia network:', addError);
+          throw new Error('Failed to add Arbitrum Sepolia network. Please add it manually in MetaMask.');
         }
       } else {
-        console.error('Failed to switch to U2U Testnet network:', switchError);
-        throw new Error('Failed to switch to U2U Testnet network. Please switch manually in MetaMask.');
+        console.error('Failed to switch to Arbitrum Sepolia network:', switchError);
+        throw new Error('Failed to switch to Arbitrum Sepolia network. Please switch manually in MetaMask.');
       }
     }
   }, []);
@@ -146,7 +146,7 @@ export const useWallet = () => {
     chainId,
     connect: connectWallet,
     disconnect,
-    switchToU2UNetwork, // Add the new function to the return object
+    switchToArbitrumSepolia, // Add the new function to the return object
     isConnecting,
     error: connectError || disconnectError,
     connector: connector?.name

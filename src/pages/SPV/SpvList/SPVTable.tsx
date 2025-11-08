@@ -171,7 +171,7 @@ const SPVTable: React.FC<SPVTableProps> = ({ data, setSpv }) => {
         if (!address) return <span className="text-gray-400">Not deployed</span>;
         
         // Use the address directly for U2U testnet explorer
-        const explorerUrl = `https://testnet.u2uscan.xyz/address/${address}`;
+        const explorerUrl = `https://sepolia.arbiscan.io/address/${address}`;
 
         return (
           <div className="flex gap-2">

@@ -47,7 +47,7 @@ export const useSpvApi = () => {
     connectorName,
     isMetaMaskConnected,
     getProvider,
-    switchToU2UNetwork // Add this new function
+    switchToArbitrumSepolia // Add this new function
   } = useWalletConnection();
 
   const initializeSDK = useCallback(async () => {
@@ -70,14 +70,14 @@ export const useSpvApi = () => {
         throw new Error("Wallet address mismatch. Please reconnect your MetaMask wallet.");
       }
 
-      // Verify we're connected to the correct network (U2U testnet or mainnet)
+      // Verify we're connected to the correct network (Arbitrum Sepolia)
       const network = await provider.getNetwork();
       console.log('Connected network:', network);
       
-      // U2U Testnet = 2484, U2U Mainnet = 39
-      if (network.chainId !== 2484 && network.chainId !== 39) {
+      // Arbitrum Sepolia = 421614
+      if (network.chainId !== 421614) {
         console.error('Incorrect network detected:', network);
-        throw new Error(`Please switch to U2U Network (Testnet ID: 2484 or Mainnet ID: 39). Currently connected to chain ID: ${network.chainId}`);
+        throw new Error(`Please switch to Arbitrum Sepolia Network (ID: 421614). Currently connected to chain ID: ${network.chainId}`);
       }
 
       // For proplex, we'll return the provider and signer directly
@@ -126,7 +126,7 @@ export const useSpvApi = () => {
         throw new Error("Please connect your MetaMask wallet first");
       }
 
-      // 2. Check if user is on the correct U2U network
+      // 2. Check if user is on the correct Arbitrum Sepolia network
       // Note: We can't directly access chainId here, so we'll check during provider initialization
       console.log("Wallet connected:", { address, isConnected });
 
@@ -135,14 +135,14 @@ export const useSpvApi = () => {
       const { provider, signer } = await initializeSDK();
       console.log("Provider and signer initialized successfully");
       
-      // Verify we're connected to the correct network (U2U testnet or mainnet)
+      // Verify we're connected to the correct network (Arbitrum Sepolia)
       const network = await provider.getNetwork();
       console.log('Connected network:', network);
       
-      // U2U Testnet = 2484, U2U Mainnet = 39
-      if (network.chainId !== 2484 && network.chainId !== 39) {
+      // Arbitrum Sepolia = 421614
+      if (network.chainId !== 421614) {
         console.error('Incorrect network detected:', network);
-        throw new Error(`Please switch to U2U Network (Testnet ID: 2484 or Mainnet ID: 39). Currently connected to chain ID: ${network.chainId}`);
+        throw new Error(`Please switch to Arbitrum Sepolia Network (ID: 421614). Currently connected to chain ID: ${network.chainId}`);
       }
 
       // 3. First create the company in our backend

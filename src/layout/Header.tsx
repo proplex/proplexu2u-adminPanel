@@ -24,15 +24,14 @@ function Header() {
     connector,
     connect,
     disconnect,
-    switchToU2UNetwork,
+    switchToArbitrumSepolia,
     error,
     isConnecting,
   } = useWalletConnect();
 
-  // Check if user is on the correct U2U network
-  const isU2UNetwork = chainId === 2484 || chainId === 39;
-  const networkName = chainId === 2484 ? 'U2U Nebulas Testnet' : 
-                     chainId === 39 ? 'U2U Mainnet' : 
+  // Check if user is on the correct Arbitrum Sepolia network
+  const isArbitrumSepolia = chainId === 421614;
+  const networkName = chainId === 421614 ? 'Arbitrum Sepolia' : 
                      chainId === 1 ? 'Ethereum Mainnet' : 
                      chainId === 137 ? 'Polygon Mainnet' : 
                      chainId === 80001 ? 'Polygon Mumbai Testnet' : 
@@ -88,19 +87,19 @@ const handleDisconnectWallet = useCallback(async () => {
   }
 }, [disconnect]);
   
-  // Function to switch to U2U network
-  const handleSwitchToU2UNetwork = useCallback(async () => {
+  // Function to switch to Arbitrum Sepolia network
+  const handleSwitchToArbitrumSepolia = useCallback(async () => {
     try {
       setIsConnectingWallet(true);
-      const result = await switchToU2UNetwork();
+      const result = await switchToArbitrumSepolia();
       console.log(result.message);
     } catch (error: any) {
-      console.error('Error switching to U2U network:', error);
+      console.error('Error switching to Arbitrum Sepolia network:', error);
       alert(error.message || 'Failed to switch network');
     } finally {
       setIsConnectingWallet(false);
     }
-  }, [switchToU2UNetwork]);
+  }, [switchToArbitrumSepolia]);
 
   // Open wallet modal
   const openWalletModal = useCallback(() => {
@@ -133,7 +132,7 @@ const handleDisconnectWallet = useCallback(async () => {
       <div className="flex items-center gap-4">
         {isConnected && address ? (
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isU2UNetwork ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${isArbitrumSepolia ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
             <div className="text-gray-700 font-medium">
               <span className="text-sm">Connected:</span> {formatAddress(address)}
               {connector?.name && (
@@ -141,7 +140,7 @@ const handleDisconnectWallet = useCallback(async () => {
                   ({connector.name})
                 </span>
               )}
-              {!isU2UNetwork && (
+              {!isArbitrumSepolia && (
                 <div className="flex items-center gap-1 mt-1">
                   <AlertTriangle className="h-3 w-3 text-yellow-500" />
                   <span className="text-xs text-yellow-600">
@@ -161,11 +160,11 @@ const handleDisconnectWallet = useCallback(async () => {
         <div className="flex items-center gap-2">
           {isConnected ? (
             <>
-              {!isU2UNetwork && (
+              {!isArbitrumSepolia && (
                 <Button 
                   variant="destructive" 
                   size="sm" 
-                  onClick={handleSwitchToU2UNetwork}
+                  onClick={handleSwitchToArbitrumSepolia}
                   disabled={isConnecting || isConnectingWallet}
                   className="flex items-center gap-2"
                 >
@@ -174,7 +173,7 @@ const handleDisconnectWallet = useCallback(async () => {
                   ) : (
                     <AlertTriangle className="h-4 w-4" />
                   )}
-                  Switch to U2U
+                  Switch to Arbitrum
                 </Button>
               )}
               <DropdownMenu>
