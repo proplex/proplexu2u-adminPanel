@@ -31,7 +31,7 @@ const Index = ({ asset }: { asset: any }) => {
               <h2 className="text-sm md:text-base font-mono break-all">
                 {company?.transactionHash ? (
                   <a
-                    href={`https://testnet.u2uscan.xyz/tx/${company.transactionHash}`}
+                    href={`https://sepolia.arbiscan.io/tx/${company.transactionHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline text-blue-600 hover:text-blue-800"

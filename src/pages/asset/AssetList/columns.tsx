@@ -71,7 +71,7 @@ const getColumns = (setAsset: (asset: any) => void) => [
         return <span className="text-gray-500">Not deployed</span>;
       }
 
-      const explorerUrl = `https://testnet.u2uscan.xyz/address/${assetAddress}`;
+      const explorerUrl = `https://sepolia.arbiscan.io/address/${assetAddress}`;
 
       return (
         <div className="flex items-center gap-2">
