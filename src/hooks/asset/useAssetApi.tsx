@@ -319,10 +319,10 @@ export const useAssetApi = () => {
             console.log("Deployment transaction mined:", deployReceipt);
 
             const identityRegistry =
-              "0x962185B4912bFb91bA9c4b26CE905E484Fa216c1";
-            const compliance = "0xad7C8C502DbbFCD74c2F68f002822048Af8985F9";
-            const issuerRegistry = "0x047E36d57b021e92ceb6d3b87aFEa480c5D9A388";
-            const claimRegistry = "0x37F9Df8f735c1F44dAbc8B86f57b840Ba189b54A";
+              "0xD49CdDA22d425eCFff516a71D0C020b16e2Be58C";
+            const compliance = "0x3CBE61c36356361772AcFb2BF482758c58E61d24";
+            const issuerRegistry = "0xe66ae37Bc0982825b5F8b37821b42d3B2d04D085";
+            const claimRegistry = "0xa6401adAd919ea6Ec9929716a19DDFf62bc3Bc1C";
             const spv = res?.data?.data?.company?.spvAddress || "0x"; // Dynamic SPV address from company data
             const assetOwnerAddress = assetOwner || "0x"; // Asset owner wallet address from company data
 
